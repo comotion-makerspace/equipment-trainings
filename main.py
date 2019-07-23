@@ -15,8 +15,9 @@ USER_AGREEMENT_TRAINING_ID = os.environ['USER_AGREEMENT_TRAINING_ID']
 
 # general config
 
-OPENING_HOURS_PICKLE = '.{}hours.pickle'.format(os.sep)
-MEMBERS_PICKLE = '.{}members.pickle'.format(os.sep)
+# TODO: check cached dir exists first!
+OPENING_HOURS_PICKLE = '.{}cached{}hours.pickle'.format(os.sep,os.sep)
+MEMBERS_PICKLE = '.{}cached{}members.pickle'.format(os.sep,os.sep)
 
 LOG_LEVEL = logging.INFO
 LOG_FILENAME = 'main.log'
