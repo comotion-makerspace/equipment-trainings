@@ -13,6 +13,8 @@ FABMAN_API_KEY = os.environ['FABMAN_API_KEY']
 FABMAN_SPACE = os.environ['FABMAN_SPACE']
 USER_AGREEMENT_TRAINING_ID = os.environ['USER_AGREEMENT_TRAINING_ID']
 
+LOG_DIR_PATH = os.environ['LOG_DIR_PATH']
+
 # general config
 
 # TODO: check cached dir exists first!
@@ -30,6 +32,17 @@ fmt = ("%(asctime)s %(levelname)s -> %(message)s")
 datefmt = '%Y-%m-%d %H:%M:%S'
 logging.basicConfig(level=LOG_LEVEL, filename=LOG_FILENAME, format=fmt, datefmt=datefmt)
 
+# Ensure cached dir exists
+if not os.path.isdir('.{}cached'.format(os.sep)):
+    logging.info('.{}cached doesn\'t exist; creating dir now...'.format(os.sep))
+    try:
+        os.mkdir('.{}cached'.format(os.sep))
+    except Exception as e:
+        logging.warning('{}Couldn\'t create cached dir; cached functions won\'t work!'
+                        .format(e))
+
+
+
 def fabman_request(**kwargs):
 
     headers = {'Accept': 'application/json',
@@ -37,10 +50,6 @@ def fabman_request(**kwargs):
 
     if kwargs.get('hours', None):
         print('opening-hours')
-        r = requests.get('https://fabman.io/api/v1/spaces/{}/opening-hours'
-                         .format(FABMAN_SPACE), headers=headers)
-
-    elif kwargs.get('trainings', None):
         r = requests.get('https://fabman.io/api/v1/spaces/{}/opening-hours'
                          .format(FABMAN_SPACE), headers=headers)
 
@@ -65,7 +74,8 @@ def fabman_request(**kwargs):
             if members:
                 members = json.loads(json.dumps(members))
             try:
-                with open(MEMBERS_PICKLE, 'wb') as f:
+                with open('{}'.format(MEMBERS_PICKLE), 'wb') as f:
+                # with open('{}'.format(MEMBERS_PICKLE), 'wb') as f:
                     pickle.dump(members, f, pickle.HIGHEST_PROTOCOL)
             except Exception as e:
                 logging.error('Could not create pickle: {}'
@@ -81,16 +91,18 @@ def fabman_request_cached(**kwargs):
     if kwargs.get('members', None):
         print('getting cached members')
         try:
-            with open(MEMBERS_PICKLE, 'rb') as f:
+            with open('.{}cached{}{}'.format(os.sep,os.sep,MEMBERS_PICKLE),'rb') as f:
+            # with open('{}'.format(os.sep,os.sep,MEMBERS_PICKLE),'rb') as f
                 return pickle.load(f)
-        except (OSError, IOError):
-            logging.info('{} doesn\'t exist! attempting to get it now...'
-                         .format(MEMBERS_PICKLE))
+        except Exception as e:
+            logging.info('{} doesn\'t exist! attempting to create it now...'
+                         '\n{}'
+                         .format(MEMBERS_PICKLE, e))
             fabman_request(members=True)
 
 def get_opening_hours():
     if r.status_code == 200 and r.json():
-        with open(OPENING_HOURS_PICKLE, 'wb') as f:
+        with open('.{}cached{}{}'.format(os.sep,os.sep,OPENING_HOURS_PICKLE),'wb') as f:
             pickle.dump(r.json(), f, pickle.HIGHEST_PROTOCOL)
         logging.info('Fetching opening hours')
     else:
